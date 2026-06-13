@@ -9,8 +9,8 @@ namespace TheBigRedButtonInstitute.Editor
 {
     public static class QuestVrApkBuilder
     {
-        const string OutputFileName = "TheBigRedButtonInstitute.apk";
-        const string AndroidIdentifier = "org.thebigredbuttoninstitute.app";
+        const string OutputFileName = "TheBigRedButtonInstitute-UnityVersion.apk";
+        const string AndroidIdentifier = "org.thebigredbuttoninstitute.unityversion";
         const string MenuPath = "Tools/Big Red Button/Build Quest APK";
 
         [MenuItem(MenuPath)]
@@ -103,7 +103,8 @@ namespace TheBigRedButtonInstitute.Editor
         static void ConfigurePlayerSettings()
         {
             PlayerSettings.companyName = "The Big Red Button Institute";
-            PlayerSettings.productName = "The Big Red Button Institute";
+            PlayerSettings.productName = "The Big Red Button Institute Unity Version";
+            PlayerSettings.bundleVersion = "0.1.0-unity";
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel32;
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevel34;

@@ -8,6 +8,7 @@ using TheBigRedButtonInstitute.Biofeedback;
 using TheBigRedButtonInstitute.Diagnostics;
 using TheBigRedButtonInstitute.Questionnaire;
 using TheBigRedButtonInstitute.RustyXrBroker;
+using TheBigRedButtonInstitute.Study;
 using TheBigRedButtonInstitute.VR;
 
 namespace TheBigRedButtonInstitute.Editor
@@ -98,6 +99,12 @@ namespace TheBigRedButtonInstitute.Editor
             inputManager.ConfigureDiagnosticReferences(diagnosticRuntime);
             inputManager.ConfigureQuestionnaireReferences(questionnaireLauncher);
             polarHeartbeatButtonDriver.ConfigureReferences(polarRuntimeManager, inputManager, blinkController);
+            var studyController = BrbUnityFirstStudySceneInstaller.InstallIntoOpenScene(
+                scene,
+                runtimeRoot,
+                inputManager,
+                headTransform,
+                button != null ? button.transform : null);
             inputManager.CenterButtonInFrontOfHead();
             var targetCamera = headTransform.GetComponent<Camera>() ?? Camera.main;
             var pressCounter = BigRedButtonWorldPressCounterAuthoring.AuthorIntoOpenScene(
@@ -113,6 +120,11 @@ namespace TheBigRedButtonInstitute.Editor
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(inputManager);
             EditorUtility.SetDirty(questionnaireLauncher);
+            if (studyController != null)
+            {
+                EditorUtility.SetDirty(studyController);
+            }
+
             if (pressCounter != null)
             {
                 EditorUtility.SetDirty(pressCounter);
@@ -947,7 +959,7 @@ namespace TheBigRedButtonInstitute.Editor
             Transform headTransform)
         {
             var client = runtimeRoot.GetComponent<RustyXrBrokerClient>() ?? runtimeRoot.AddComponent<RustyXrBrokerClient>();
-            client.ConfigureIdentity("org.thebigredbuttoninstitute.app", "The Big Red Button Institute", "0.1.0");
+            client.ConfigureIdentity("org.thebigredbuttoninstitute.unityversion", "The Big Red Button Institute Unity Version", "0.1.0-unity");
             client.ConfigureDefaultStreams(
                 RustyXrBrokerDriveSignal.DefaultStream,
                 RustyXrBrokerScreenGazeReceiver.DefaultStream,

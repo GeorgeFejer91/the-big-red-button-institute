@@ -41,7 +41,13 @@ if (-not [string]::IsNullOrWhiteSpace($ExecuteMethod))
 
 $arguments += @('-logFile', $LogFile)
 
+$unityExitCode = 0
 & $UnityPath @arguments
+$unityExitCode = $LASTEXITCODE
+if ($null -eq $unityExitCode)
+{
+    $unityExitCode = -1
+}
 
 $deadline = (Get-Date).AddSeconds([Math]::Max(5, $BackgroundWaitSeconds))
 do
@@ -60,3 +66,8 @@ if (!(Test-Path $LogFile))
 }
 
 Get-Content $LogFile -Tail 200
+
+if ($unityExitCode -ne 0)
+{
+    throw "Unity batchmode failed with exit code $unityExitCode. Log: $LogFile"
+}

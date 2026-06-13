@@ -56,7 +56,7 @@ namespace TheBigRedButtonInstitute.VR
             }
 
             var triggered = useFullButtonPress
-                ? inputManager.TriggerButtonPressFromRuntime()
+                ? inputManager.TriggerButtonPressFromRuntime("rusty_xr_broker")
                 : inputManager.TriggerButtonBlinkFromRuntime();
 
             if (triggered)

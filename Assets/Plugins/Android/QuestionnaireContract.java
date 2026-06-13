@@ -20,7 +20,7 @@ final class QuestionnaireContract {
 
     static final String QuestionnaireId = "brb-questionnaire-v1";
     static final String DefaultStage = "demographics";
-    static final String ResultAuthority = "org.thebigredbuttoninstitute.app.questionnaire.results";
+    static final String ResultAuthority = "org.thebigredbuttoninstitute.unityversion.questionnaire.results";
 
     private QuestionnaireContract() {
     }

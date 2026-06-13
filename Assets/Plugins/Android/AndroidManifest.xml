@@ -21,7 +21,7 @@
     <meta-data android:name="com.oculus.ossplash.background" android:value="black" />
     <meta-data android:name="com.oculus.telemetry.project_guid" android:value="3519a943-2897-4966-9a47-718251c25ea5" />
     <meta-data android:name="com.oculus.supportedDevices" android:value="quest2|questpro|quest3|quest3s" tools:replace="android:value" />
-    <provider android:name="org.thebigredbuttoninstitute.questionnaire.QuestionnaireResultProvider" android:authorities="org.thebigredbuttoninstitute.app.questionnaire.results" android:exported="false" android:grantUriPermissions="true">
+    <provider android:name="org.thebigredbuttoninstitute.questionnaire.QuestionnaireResultProvider" android:authorities="org.thebigredbuttoninstitute.unityversion.questionnaire.results" android:exported="false" android:grantUriPermissions="true">
       <grant-uri-permission android:pathPrefix="/result/" />
     </provider>
     <receiver android:name="org.thebigredbuttoninstitute.questionnaire.QuestionnaireReturnReceiver" android:exported="false" />

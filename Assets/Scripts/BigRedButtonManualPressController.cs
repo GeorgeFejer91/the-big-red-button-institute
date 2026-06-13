@@ -336,7 +336,7 @@ namespace TheBigRedButtonInstitute
             }
 
             ResolveReferences(forceRefresh: false);
-            if (inputManager == null || !inputManager.TriggerButtonPressFromRuntime())
+            if (inputManager == null || !inputManager.TriggerButtonPressFromRuntime("controller_contact"))
             {
                 TryLogPressDispatchFailure(interactor);
                 return;

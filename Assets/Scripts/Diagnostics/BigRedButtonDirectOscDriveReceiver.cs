@@ -204,7 +204,7 @@ namespace TheBigRedButtonInstitute.Diagnostics
             if (shouldTrigger &&
                 (_lastTriggerTime < 0d || nowSeconds - _lastTriggerTime >= minimumTriggerIntervalSeconds))
             {
-                acceptedPulse = inputManager != null && inputManager.TriggerButtonPressFromRuntime();
+                acceptedPulse = inputManager != null && inputManager.TriggerButtonPressFromRuntime("direct_osc");
                 if (acceptedPulse)
                 {
                     _lastTriggerTime = nowSeconds;

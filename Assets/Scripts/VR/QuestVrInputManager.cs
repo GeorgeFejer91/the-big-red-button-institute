@@ -112,6 +112,21 @@ namespace TheBigRedButtonInstitute.VR
             public string Name { get; }
         }
 
+        public readonly struct ButtonPressEvent
+        {
+            public ButtonPressEvent(int count, string source, double realtimeSinceStartup)
+            {
+                Count = count;
+                Source = string.IsNullOrWhiteSpace(source) ? "runtime" : source.Trim();
+                RealtimeSinceStartup = realtimeSinceStartup;
+            }
+
+            public int Count { get; }
+            public string Source { get; }
+            public double RealtimeSinceStartup { get; }
+            public bool IsControllerContact => string.Equals(Source, "controller_contact", StringComparison.Ordinal);
+        }
+
         static readonly HudPageDefinition[] HudPages =
         {
             new(HudPageId.Dashboard, "Dashboard"),
@@ -185,6 +200,7 @@ namespace TheBigRedButtonInstitute.VR
         public int ButtonPressCount => _buttonPressCount;
         public BigRedButtonAnimationTester ButtonAnimationTester => buttonAnimationTester;
         public BigRedButtonBlinkController ButtonBlinkController => buttonBlinkController;
+        public event Action<ButtonPressEvent> ButtonPressAccepted;
 
         void Reset()
         {
@@ -371,6 +387,11 @@ namespace TheBigRedButtonInstitute.VR
 
         public bool TriggerButtonPressFromRuntime()
         {
+            return TriggerButtonPressFromRuntime("runtime");
+        }
+
+        public bool TriggerButtonPressFromRuntime(string source)
+        {
             ResolveReferences(forceRefresh: false);
             var triggered = false;
 
@@ -392,6 +413,7 @@ namespace TheBigRedButtonInstitute.VR
             }
 
             _buttonPressCount++;
+            ButtonPressAccepted?.Invoke(new ButtonPressEvent(_buttonPressCount, source, Time.realtimeSinceStartupAsDouble));
             hud?.RefreshImmediately();
             return true;
         }
@@ -778,7 +800,7 @@ namespace TheBigRedButtonInstitute.VR
 
         void ReplayButtonPress()
         {
-            if (!TriggerButtonPressFromRuntime())
+            if (!TriggerButtonPressFromRuntime("hud_replay"))
             {
                 hud?.SetTransientMessage("press_button failed: no button visual");
                 return;

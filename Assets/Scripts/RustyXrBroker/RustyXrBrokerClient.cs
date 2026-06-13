@@ -23,9 +23,9 @@ namespace TheBigRedButtonInstitute.RustyXrBroker
     {
         [SerializeField] string websocketUri = "ws://127.0.0.1:8765/rustyxr/v1/events";
         [SerializeField] string clientId = "big-red-button-unity";
-        [SerializeField] string appPackage = "org.thebigredbuttoninstitute.app";
-        [SerializeField] string appLabel = "The Big Red Button Institute";
-        [SerializeField] string appVersion = "0.1.0";
+        [SerializeField] string appPackage = "org.thebigredbuttoninstitute.unityversion";
+        [SerializeField] string appLabel = "The Big Red Button Institute Unity Version";
+        [SerializeField] string appVersion = "0.1.0-unity";
         [SerializeField] bool connectOnEnable = true;
         [SerializeField] bool subscribeOnConnect = true;
         [SerializeField] string[] defaultStreams = { RustyXrBrokerDriveSignal.DefaultStream };
