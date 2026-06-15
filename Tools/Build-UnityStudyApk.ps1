@@ -1,7 +1,9 @@
 param(
     [string]$UnityPath = "C:\Program Files\Unity\Hub\Editor\6000.3.16f1\Editor\Unity.exe",
     [string]$ProjectPath = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-    [string]$LogFile = (Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")).Path "Builds\Android\unity-study-apk-build.log")
+    [string]$LogFile = (Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")).Path "Builds\Android\unity-study-apk-build.log"),
+    [ValidateSet("Classic", "NativeQuestStudy")]
+    [string]$ButtonModelProfile = "Classic"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,11 +12,17 @@ if (!(Test-Path $UnityPath)) {
     throw "Unity editor not found: $UnityPath"
 }
 
+$executeMethod = if ($ButtonModelProfile -eq "NativeQuestStudy") {
+    "TheBigRedButtonInstitute.Editor.QuestVrApkBuilder.InstallNativeQuestStudySceneAndBuildApk"
+} else {
+    "TheBigRedButtonInstitute.Editor.QuestVrApkBuilder.InstallSceneAndBuildApk"
+}
+
 & (Join-Path $PSScriptRoot "Invoke-UnityBatch.ps1") `
     -UnityPath $UnityPath `
     -ProjectPath $ProjectPath `
     -LogFile $LogFile `
-    -ExecuteMethod "TheBigRedButtonInstitute.Editor.QuestVrApkBuilder.InstallSceneAndBuildApk"
+    -ExecuteMethod $executeMethod
 
 $apk = Join-Path $ProjectPath "Builds\Android\TheBigRedButtonInstitute-UnityVersion.apk"
 if (!(Test-Path $apk)) {

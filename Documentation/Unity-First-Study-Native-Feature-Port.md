@@ -9,6 +9,8 @@ This fork carries the native Quest study structure into the public Unity Big Red
 - Product name: `The Big Red Button Institute Unity Version`
 - Study controller: `Assets/Scripts/Study/BrbUnityFirstStudyController.cs`
 - Scene installer hook: `Assets/Editor/BrbUnityFirstStudySceneInstaller.cs`
+- Alternative native Quest study button model:
+  `Assets/Models/NativeQuestStudyBigRedButton.glb`
 
 ## Ported Study Elements
 
@@ -41,6 +43,7 @@ Use the Unity editor version pinned by the project, `6000.3.16f1` or newer compa
 ```powershell
 Tools\Run-UnityStudyPreRenderValidation.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.16f1\Editor\Unity.exe"
 Tools\Build-UnityStudyApk.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.16f1\Editor\Unity.exe"
+Tools\Build-UnityStudyApk.ps1 -UnityPath "C:\Program Files\Unity\Hub\Editor\6000.3.16f1\Editor\Unity.exe" -ButtonModelProfile NativeQuestStudy
 Tools\Run-UnityStudyHeadsetValidation.ps1
 ```
 

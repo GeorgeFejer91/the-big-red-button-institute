@@ -16,7 +16,6 @@ namespace TheBigRedButtonInstitute.Editor
     public static class QuestVrSceneInstaller
     {
         const string ScenePath = "Assets/Scenes/SampleScene.unity";
-        const string ModelPath = "Assets/Models/BigRedButton.glb";
         const string OvrCameraRigPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
         const string OvrControllerPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRControllerPrefab.prefab";
         const string OvrHandPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRHandPrefab.prefab";
@@ -25,11 +24,21 @@ namespace TheBigRedButtonInstitute.Editor
         const string HudName = "VR Overlay HUD";
         const string LegacyGeneratedCounterCanvasName = "Button Press Counter Canvas";
         const string SessionKey = "TheBigRedButtonInstitute.QuestVrInstalled.v2";
+        const bool EnableBrokerRuntimeByDefault = false;
         static readonly Vector3 RigPosition = new(0f, 1.65f, -1.7f);
 
         [MenuItem("Tools/Big Red Button/Install Quest VR Runtime")]
         public static void InstallFromMenu()
         {
+            BigRedButtonSceneInstaller.SetActiveModelProfile(BigRedButtonModelProfile.Classic);
+            SessionState.EraseBool(SessionKey);
+            TryInstall();
+        }
+
+        [MenuItem("Tools/Big Red Button/Install Quest VR Runtime (Native Quest Study Model)")]
+        public static void InstallNativeQuestStudyFromMenu()
+        {
+            BigRedButtonSceneInstaller.SetActiveModelProfile(BigRedButtonModelProfile.NativeQuestStudy);
             SessionState.EraseBool(SessionKey);
             TryInstall();
         }
@@ -80,7 +89,9 @@ namespace TheBigRedButtonInstitute.Editor
 
             var polarRuntimeManager = PolarH10SceneInstaller.InstallIntoScene(scene, runtimeRoot, headTransform);
             var polarHeartbeatButtonDriver = EnsurePolarHeartbeatButtonDriver(runtimeRoot);
-            var brokerRuntime = EnsureRustyXrBrokerRuntime(runtimeRoot, inputManager, headTransform);
+            var brokerRuntime = EnableBrokerRuntimeByDefault
+                ? EnsureRustyXrBrokerRuntime(runtimeRoot, inputManager, headTransform)
+                : DisableRustyXrBrokerRuntime(runtimeRoot);
             var diagnosticRuntime = EnsureDiagnosticComparisonRuntime(
                 runtimeRoot,
                 inputManager,
@@ -95,7 +106,10 @@ namespace TheBigRedButtonInstitute.Editor
             hud.EnsureSetupInEditor();
             inputManager.ConfigureReferences(hud, headTransform, button != null ? button.transform : null, tester);
             inputManager.ConfigurePolarReferences(polarRuntimeManager, polarHeartbeatButtonDriver);
-            inputManager.ConfigureBrokerReferences(brokerRuntime.Client, brokerRuntime.ButtonDriver, brokerRuntime.ButtonBridge);
+            inputManager.ConfigureBrokerReferences(
+                brokerRuntime?.Client,
+                brokerRuntime?.ButtonDriver,
+                brokerRuntime?.ButtonBridge);
             inputManager.ConfigureDiagnosticReferences(diagnosticRuntime);
             inputManager.ConfigureQuestionnaireReferences(questionnaireLauncher);
             polarHeartbeatButtonDriver.ConfigureReferences(polarRuntimeManager, inputManager, blinkController);
@@ -193,10 +207,18 @@ namespace TheBigRedButtonInstitute.Editor
 
         static GameObject EnsureButton(Scene scene)
         {
+            var modelProfile = BigRedButtonSceneInstaller.GetActiveModelProfile();
+            var modelPath = BigRedButtonModelProfiles.GetEditorAssetPath(modelProfile);
             foreach (var rootObject in scene.GetRootGameObjects())
             {
                 if (rootObject.name == ButtonName)
                 {
+                    if (!IsButtonUsingModelPath(rootObject, modelPath))
+                    {
+                        UnityEngine.Object.DestroyImmediate(rootObject);
+                        break;
+                    }
+
                     BigRedButtonSceneInstaller.ConfigureAnimationTest(rootObject);
                     BigRedButtonSceneInstaller.ConfigureBlinkController(rootObject);
                     BigRedButtonSceneInstaller.ConfigureManualPressController(rootObject);
@@ -205,10 +227,10 @@ namespace TheBigRedButtonInstitute.Editor
                 }
             }
 
-            var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
+            var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (prefabAsset == null)
             {
-                Debug.LogError($"Could not load the imported button prefab from {ModelPath}");
+                Debug.LogError($"Could not load the imported button prefab from {modelPath}");
                 return null;
             }
 
@@ -229,6 +251,13 @@ namespace TheBigRedButtonInstitute.Editor
             BigRedButtonSceneInstaller.NormalizeButtonScale(instance);
             EditorUtility.SetDirty(instance);
             return instance;
+        }
+
+        static bool IsButtonUsingModelPath(GameObject button, string modelPath)
+        {
+            var source = button != null ? PrefabUtility.GetCorrespondingObjectFromSource(button) : null;
+            var sourcePath = source != null ? AssetDatabase.GetAssetPath(source) : null;
+            return string.Equals(sourcePath, modelPath, StringComparison.OrdinalIgnoreCase);
         }
 
         static GameObject EnsureRuntimeRoot(Scene scene)
@@ -382,6 +411,8 @@ namespace TheBigRedButtonInstitute.Editor
             serializedInputManager.FindProperty("buttonDistanceFromHead").floatValue = 0.48f;
             serializedInputManager.FindProperty("buttonVerticalOffset").floatValue = -0.62f;
             serializedInputManager.FindProperty("minimumButtonHeight").floatValue = 0.54f;
+            serializedInputManager.FindProperty("enableBrokerControls").boolValue = false;
+            serializedInputManager.FindProperty("allowBrokerOpenUiLaunchExtra").boolValue = false;
             serializedInputManager.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(inputManager);
         }
@@ -953,7 +984,7 @@ namespace TheBigRedButtonInstitute.Editor
             public QuestVrRustyXrBrokerButtonBridge ButtonBridge { get; }
         }
 
-        static BrokerRuntimeComponents EnsureRustyXrBrokerRuntime(
+        static BrokerRuntimeComponents? EnsureRustyXrBrokerRuntime(
             GameObject runtimeRoot,
             QuestVrInputManager inputManager,
             Transform headTransform)
@@ -1014,12 +1045,54 @@ namespace TheBigRedButtonInstitute.Editor
                 buttonBridge);
         }
 
+        static BrokerRuntimeComponents? DisableRustyXrBrokerRuntime(GameObject runtimeRoot)
+        {
+            RemoveBrokerScreenGazeMarker(runtimeRoot);
+            DestroyComponentIfPresent<RustyXrBrokerScreenGazeVisualizer>(runtimeRoot);
+            DestroyComponentIfPresent<RustyXrBrokerScreenGazeReceiver>(runtimeRoot);
+            DestroyComponentIfPresent<QuestVrRustyXrBrokerButtonBridge>(runtimeRoot);
+            DestroyComponentIfPresent<RustyXrBrokerButtonDriver>(runtimeRoot);
+            DestroyComponentIfPresent<RustyXrBrokerBioSignalReceiver>(runtimeRoot);
+            DestroyComponentIfPresent<RustyXrBrokerDriveSignalReceiver>(runtimeRoot);
+            DestroyComponentIfPresent<RustyXrBrokerEventRouter>(runtimeRoot);
+            DestroyComponentIfPresent<RustyXrBrokerClient>(runtimeRoot);
+            return null;
+        }
+
+        static void RemoveBrokerScreenGazeMarker(GameObject runtimeRoot)
+        {
+            if (runtimeRoot == null)
+            {
+                return;
+            }
+
+            var marker = runtimeRoot.transform.Find("Broker Screen Gaze Marker");
+            if (marker != null)
+            {
+                UnityEngine.Object.DestroyImmediate(marker.gameObject);
+            }
+        }
+
+        static void DestroyComponentIfPresent<T>(GameObject gameObject) where T : Component
+        {
+            if (gameObject == null)
+            {
+                return;
+            }
+
+            var component = gameObject.GetComponent<T>();
+            if (component != null)
+            {
+                UnityEngine.Object.DestroyImmediate(component);
+            }
+        }
+
         static BigRedButtonDiagnosticComparisonController EnsureDiagnosticComparisonRuntime(
             GameObject runtimeRoot,
             QuestVrInputManager inputManager,
             PolarH10RuntimeManager polarRuntimeManager,
             PolarHeartbeatButtonDriver polarHeartbeatButtonDriver,
-            BrokerRuntimeComponents brokerRuntime)
+            BrokerRuntimeComponents? brokerRuntime)
         {
             var comparison = runtimeRoot.GetComponent<BigRedButtonDiagnosticComparisonController>() ??
                              runtimeRoot.AddComponent<BigRedButtonDiagnosticComparisonController>();
@@ -1036,9 +1109,9 @@ namespace TheBigRedButtonInstitute.Editor
             comparison.ConfigureReferences(
                 inputManager,
                 polarHeartbeatButtonDriver,
-                brokerRuntime.ButtonDriver,
-                brokerRuntime.DriveReceiver,
-                brokerRuntime.BioSignalReceiver,
+                brokerRuntime?.ButtonDriver,
+                brokerRuntime?.DriveReceiver,
+                brokerRuntime?.BioSignalReceiver,
                 directPolar,
                 directOsc,
                 directLsl);

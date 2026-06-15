@@ -8,7 +8,6 @@ namespace TheBigRedButtonInstitute.Editor
 {
     public static class BigRedButtonAnimationTestInstaller
     {
-        const string ModelPath = "Assets/Models/BigRedButton.glb";
         const string ScenePath = "Assets/Scenes/SampleScene.unity";
         const string ButtonName = "Big Red Button";
         const string ClipName = "pressed";
@@ -41,16 +40,16 @@ namespace TheBigRedButtonInstitute.Editor
                 return;
             }
 
-            var clip = FindPressedClip();
-            if (clip == null)
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var button = FindButton(scene);
+            if (button == null)
             {
                 EditorApplication.delayCall += TryConfigure;
                 return;
             }
 
-            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            var button = FindButton(scene);
-            if (button == null)
+            var clip = FindPressedClip(button);
+            if (clip == null)
             {
                 EditorApplication.delayCall += TryConfigure;
                 return;
@@ -96,11 +95,20 @@ namespace TheBigRedButtonInstitute.Editor
             Debug.Log($"Configured animation test for {ButtonName} using clip '{clip.name}'.");
         }
 
-        static AnimationClip FindPressedClip()
+        static AnimationClip FindPressedClip(GameObject button)
         {
-            var assets = AssetDatabase.LoadAllAssetsAtPath(ModelPath);
+            var assets = AssetDatabase.LoadAllAssetsAtPath(ResolveModelPath(button));
             var clip = assets.OfType<AnimationClip>().FirstOrDefault(asset => asset.name == ClipName);
             return clip ?? assets.OfType<AnimationClip>().FirstOrDefault();
+        }
+
+        static string ResolveModelPath(GameObject button)
+        {
+            var source = button != null ? PrefabUtility.GetCorrespondingObjectFromSource(button) : null;
+            var sourcePath = source != null ? AssetDatabase.GetAssetPath(source) : null;
+            return !string.IsNullOrWhiteSpace(sourcePath) && sourcePath.EndsWith(".glb", System.StringComparison.OrdinalIgnoreCase)
+                ? sourcePath
+                : BigRedButtonModelProfiles.GetEditorAssetPath(BigRedButtonSceneInstaller.GetActiveModelProfile());
         }
 
         static GameObject FindButton(Scene scene)

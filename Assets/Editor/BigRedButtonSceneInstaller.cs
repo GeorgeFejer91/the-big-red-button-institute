@@ -9,13 +9,13 @@ namespace TheBigRedButtonInstitute.Editor
 {
     public static class BigRedButtonSceneInstaller
     {
-        const string ModelPath = "Assets/Models/BigRedButton.glb";
         const string ScenePath = "Assets/Scenes/SampleScene.unity";
         const string ButtonName = "Big Red Button";
         const string ClipName = "pressed";
         const string BlinkMaterialPath = "Assets/Settings/BigRedButtonBlinkCap.mat";
         const string UrpLitShaderName = "Universal Render Pipeline/Lit";
         const string SessionKey = "TheBigRedButtonInstitute.ImportedButtonInstalled.v6";
+        const string ModelProfileSessionKey = "TheBigRedButtonInstitute.ButtonModelProfile";
         static readonly Vector3 ButtonPosition = new(0f, 0.9f, 1.4f);
         static readonly Vector3 TriggerSurfaceStableLocalPosition = new(-0.000021076481f, 0.017285282f, 0.0044704f);
         static readonly Vector3 TriggerSurfaceStableLocalEuler = new(328.31277f, 180.4872f, 359.38284f);
@@ -33,6 +33,15 @@ namespace TheBigRedButtonInstitute.Editor
         [MenuItem("Tools/Big Red Button/Install Imported Button")]
         public static void InstallFromMenu()
         {
+            SetActiveModelProfile(BigRedButtonModelProfile.Classic);
+            SessionState.EraseBool(SessionKey);
+            TryInstall();
+        }
+
+        [MenuItem("Tools/Big Red Button/Install Imported Button (Native Quest Study Model)")]
+        public static void InstallNativeQuestStudyFromMenu()
+        {
+            SetActiveModelProfile(BigRedButtonModelProfile.NativeQuestStudy);
             SessionState.EraseBool(SessionKey);
             TryInstall();
         }
@@ -44,7 +53,9 @@ namespace TheBigRedButtonInstitute.Editor
                 return;
             }
 
-            var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
+            var modelProfile = GetActiveModelProfile();
+            var modelPath = BigRedButtonModelProfiles.GetEditorAssetPath(modelProfile);
+            var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (prefabAsset == null)
             {
                 EditorApplication.delayCall += TryInstall;
@@ -57,7 +68,7 @@ namespace TheBigRedButtonInstitute.Editor
             var instance = PrefabUtility.InstantiatePrefab(prefabAsset, scene) as GameObject;
             if (instance == null)
             {
-                Debug.LogError($"Failed to instantiate imported button prefab from {ModelPath}");
+                Debug.LogError($"Failed to instantiate imported button prefab from {modelPath}");
                 return;
             }
 
@@ -67,7 +78,7 @@ namespace TheBigRedButtonInstitute.Editor
             transform.rotation = Quaternion.identity;
             transform.localScale = Vector3.one;
 
-            ConfigureAnimationTest(instance);
+            ConfigureAnimationTest(instance, modelPath);
             ConfigureBlinkController(instance);
             ConfigureManualPressController(instance);
             NormalizeButtonScale(instance);
@@ -75,16 +86,21 @@ namespace TheBigRedButtonInstitute.Editor
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             SessionState.SetBool(SessionKey, true);
-            Debug.Log("Installed imported Big Red Button into SampleScene.");
+            Debug.Log($"Installed {BigRedButtonModelProfiles.GetDisplayName(modelProfile)} Big Red Button into SampleScene.");
         }
 
         public static void ConfigureAnimationTest(GameObject button)
         {
-            var clip = AssetDatabase.LoadAllAssetsAtPath(ModelPath)
+            ConfigureAnimationTest(button, ResolveModelPathForButton(button));
+        }
+
+        static void ConfigureAnimationTest(GameObject button, string modelPath)
+        {
+            var clip = AssetDatabase.LoadAllAssetsAtPath(modelPath)
                 .OfType<AnimationClip>()
                 .FirstOrDefault(asset => asset.name == ClipName);
 
-            clip ??= AssetDatabase.LoadAllAssetsAtPath(ModelPath)
+            clip ??= AssetDatabase.LoadAllAssetsAtPath(modelPath)
                 .OfType<AnimationClip>()
                 .FirstOrDefault();
 
@@ -142,7 +158,9 @@ namespace TheBigRedButtonInstitute.Editor
             }
 
             var targetRenderer = FindCapRenderer(button);
-            var blinkMaterial = EnsureBlinkMaterial(targetRenderer != null ? targetRenderer.sharedMaterial : null);
+            var blinkMaterial = EnsureBlinkMaterial(
+                targetRenderer != null ? targetRenderer.sharedMaterial : null,
+                ResolveModelPathForButton(button));
             if (targetRenderer != null && blinkMaterial != null)
             {
                 targetRenderer.sharedMaterial = blinkMaterial;
@@ -311,7 +329,7 @@ namespace TheBigRedButtonInstitute.Editor
                 $"light distance from cap center={Vector3.Distance(lightWorld, bounds.center):0.0000}m");
         }
 
-        static Material EnsureBlinkMaterial(Material sourceMaterial)
+        static Material EnsureBlinkMaterial(Material sourceMaterial, string modelPath)
         {
             var blinkMaterial = AssetDatabase.LoadAssetAtPath<Material>(BlinkMaterialPath);
             if (blinkMaterial == null)
@@ -358,7 +376,7 @@ namespace TheBigRedButtonInstitute.Editor
                 }
             }
 
-            sourceTexture ??= AssetDatabase.LoadAllAssetsAtPath(ModelPath)
+            sourceTexture ??= AssetDatabase.LoadAllAssetsAtPath(modelPath)
                 .OfType<Texture2D>()
                 .FirstOrDefault(texture => texture != null && !texture.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase));
 
@@ -411,6 +429,32 @@ namespace TheBigRedButtonInstitute.Editor
             }
 
             return null;
+        }
+
+        public static BigRedButtonModelProfile GetActiveModelProfile()
+        {
+            var storedValue = SessionState.GetInt(ModelProfileSessionKey, (int)BigRedButtonModelProfile.Classic);
+            return BigRedButtonModelProfiles.Normalize((BigRedButtonModelProfile)storedValue);
+        }
+
+        public static void SetActiveModelProfile(BigRedButtonModelProfile profile)
+        {
+            SessionState.SetInt(ModelProfileSessionKey, (int)BigRedButtonModelProfiles.Normalize(profile));
+        }
+
+        static string ResolveModelPathForButton(GameObject button)
+        {
+            if (button != null)
+            {
+                var source = PrefabUtility.GetCorrespondingObjectFromSource(button);
+                var sourcePath = source != null ? AssetDatabase.GetAssetPath(source) : null;
+                if (!string.IsNullOrWhiteSpace(sourcePath) && sourcePath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
+                {
+                    return sourcePath;
+                }
+            }
+
+            return BigRedButtonModelProfiles.GetEditorAssetPath(GetActiveModelProfile());
         }
 
         static Renderer FindCapRenderer(GameObject button)

@@ -12,6 +12,7 @@ namespace TheBigRedButtonInstitute.Editor
         const string OutputFileName = "TheBigRedButtonInstitute-UnityVersion.apk";
         const string AndroidIdentifier = "org.thebigredbuttoninstitute.unityversion";
         const string MenuPath = "Tools/Big Red Button/Build Quest APK";
+        const string NativeModelMenuPath = "Tools/Big Red Button/Build Quest APK (Native Quest Study Model)";
 
         [MenuItem(MenuPath)]
         public static void BuildFromMenu()
@@ -19,8 +20,25 @@ namespace TheBigRedButtonInstitute.Editor
             InstallSceneAndBuildApk();
         }
 
+        [MenuItem(NativeModelMenuPath)]
+        public static void BuildNativeQuestStudyModelFromMenu()
+        {
+            InstallNativeQuestStudySceneAndBuildApk();
+        }
+
         public static void InstallSceneAndBuildApk()
         {
+            InstallSceneAndBuildApk(BigRedButtonModelProfile.Classic);
+        }
+
+        public static void InstallNativeQuestStudySceneAndBuildApk()
+        {
+            InstallSceneAndBuildApk(BigRedButtonModelProfile.NativeQuestStudy);
+        }
+
+        static void InstallSceneAndBuildApk(BigRedButtonModelProfile modelProfile)
+        {
+            BigRedButtonSceneInstaller.SetActiveModelProfile(modelProfile);
             QuestVrSceneInstaller.InstallIntoSampleScene();
             ConfigurePlayerSettings();
 

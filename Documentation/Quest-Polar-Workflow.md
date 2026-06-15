@@ -130,9 +130,9 @@ Android build target, and writes the APK to:
 On a connected headset, these commands are useful when debugging BLE:
 
 ```powershell
-adb shell dumpsys package org.thebigredbuttoninstitute.app
+adb shell dumpsys package org.thebigredbuttoninstitute.unityversion
 adb logcat -d
-adb shell am start -W -n org.thebigredbuttoninstitute.app/com.unity3d.player.UnityPlayerGameActivity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -c com.oculus.intent.category.VR
+adb shell am start -W -n org.thebigredbuttoninstitute.unityversion/com.unity3d.player.UnityPlayerGameActivity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -c com.oculus.intent.category.VR
 ```
 
 `dumpsys package` is especially useful to distinguish:

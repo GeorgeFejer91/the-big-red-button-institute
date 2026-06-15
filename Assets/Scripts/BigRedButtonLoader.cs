@@ -8,7 +8,9 @@ namespace TheBigRedButtonInstitute
 {
     public class BigRedButtonLoader : MonoBehaviour
     {
-        [SerializeField] string relativePath = "Models/BigRedButton.glb";
+        [SerializeField] BigRedButtonModelProfile modelProfile = BigRedButtonModelProfile.Classic;
+        [SerializeField] bool useModelProfilePath = true;
+        [SerializeField] string relativePath = BigRedButtonModelProfiles.ClassicStreamingRelativePath;
 
         bool _loaded;
 
@@ -22,7 +24,7 @@ namespace TheBigRedButtonInstitute
             try
             {
                 var import = new GltfImport(logger: new ConsoleLogger());
-                var assetUrl = GetAssetUrl(relativePath);
+                var assetUrl = GetAssetUrl(ResolveRelativePath());
                 var success = await import.Load(assetUrl);
 
                 if (!success)
@@ -55,6 +57,24 @@ namespace TheBigRedButtonInstitute
             return normalizedPath.Contains("://", StringComparison.Ordinal)
                 ? normalizedPath
                 : new Uri(normalizedPath).AbsoluteUri;
+        }
+
+        string ResolveRelativePath()
+        {
+            if (!useModelProfilePath && !string.IsNullOrWhiteSpace(relativePath))
+            {
+                return relativePath;
+            }
+
+            relativePath = BigRedButtonModelProfiles.GetStreamingRelativePath(modelProfile);
+            return relativePath;
+        }
+
+        public void ConfigureModelProfile(BigRedButtonModelProfile profile)
+        {
+            modelProfile = BigRedButtonModelProfiles.Normalize(profile);
+            useModelProfilePath = true;
+            relativePath = BigRedButtonModelProfiles.GetStreamingRelativePath(modelProfile);
         }
 
         void ClearChildren()
